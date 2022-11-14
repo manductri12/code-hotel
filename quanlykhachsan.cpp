@@ -20,14 +20,14 @@ class hotel {
 	public:
 
 		void main_menu();		//MENU
-		void add();				//DAT PHONG
+		void add();			//DAT PHONG
 		void display(); 		//DANH SACH KHACH HANG
 		void rooms();			//DANH SACH PHONG DA DAT
 		void edit();			//CHINH SUA BAN GHI
 		int check(int);			//TINH TRANG PHONG
 		void modify(int);		//SUA DOI BAN GHI
-		void delete_rec(int);	//XOA BAN GHI
-		void bill(int);         //HOA DON
+		void delete_rec(int);		//XOA BAN GHI
+		void bill(int);        	 	//HOA DON
 };
 
 //MENU
