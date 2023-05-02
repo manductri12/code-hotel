@@ -1,0 +1,106 @@
+#include <pic.h>
+#define _XTAL_FREQ 20000000 // Tần số thạch anh 20MHz
+__CONFIG(0x3F3A); // Cấu hình chân PIC16F877A
+
+// Khai báo các chân kết nối với L298
+#define IN1 RB0
+#define IN2 RB1
+#define IN3 RB2
+#define IN4 RB3
+
+// Khai báo biến toàn cục
+unsigned int duty; // Biến lưu trữ giá trị duty cycle
+unsigned int period; // Biến lưu trữ giá trị chu kỳ
+
+// Hàm khởi tạo PWM
+void init_PWM()
+{
+    TRISC2 = 0; // Đặt chân RC2 là đầu ra
+    CCP1CON = 0x0C; // Đặt chế độ PWM cho CCP1
+    PR2 = 49; // Đặt giá trị thanh ghi PR2 để tạo tần số PWM là 10kHz
+    T2CON = 0x01; // Bật bộ định thời Timer2 với bộ chia xung là 4
+    CCPR1L = 0; // Đặt giá trị thanh ghi CCPR1L để tạo duty cycle ban đầu là 0%
+}
+
+// Hàm cập nhật duty cycle cho PWM
+void update_duty(unsigned int duty)
+{
+    CCPR1L = duty >> 2; // Gán 8 bit cao của biến duty vào thanh ghi CCPR1L
+    CCP1CON &= 0xCF; // Xóa 2 bit thấp của thanh ghi CCP1CON
+    CCP1CON |= (duty & 0x03) << 4; // Gán 2 bit thấp của biến duty vào thanh ghi CCP1CON
+}
+
+// Hàm khởi tạo các chân kết nối với L298
+void init_L298()
+{
+    TRISB = 0x00; // Đặt cổng B là đầu ra
+    IN1 = 0; // Đặt mức thấp cho IN1
+    IN2 = 0; // Đặt mức thấp cho IN2
+    IN3 = 0; // Đặt mức thấp cho IN3
+    IN4 = 0; // Đặt mức thấp cho IN4
+}
+
+// Hàm điều khiển động cơ theo chiều thuận
+void forward()
+{
+    IN1 = 1; // Đặt mức cao cho IN1
+    IN2 = 0; // Đặt mức thấp cho IN2
+    IN3 = 1; // Đặt mức cao cho IN3
+    IN4 = 0; // Đặt mức thấp cho IN4
+}
+
+// Hàm điều khiển động cơ theo chiều nghịch
+void backward()
+{
+    IN1 = 0; // Đặt mức thấp cho IN1
+    IN2 = 1; // Đặt mức cao cho IN2
+    IN3 = 0; // Đặt mức thấp cho IN3
+    IN4 = 1; // Đặt mức cao cho IN4
+}
+
+// Hàm dừng động cơ
+void stop()
+{
+    IN1 = 0; // Đặt mức thấp cho IN1
+    IN2 = 0; // Đặt mức thấp cho IN2
+    IN3 = 0; // Đặt mức thấp cho IN3
+    IN4 = 0; // Đặt mức thấp cho IN4
+}
+
+// Hàm chính
+void main()
+{
+    init_PWM(); // Gọi hàm khởi tạo PWM
+    init_L298(); // Gọi hàm khởi tạo L298
+    duty = 0; // Khởi tạo giá trị duty cycle là 0
+    period = 200; // Khởi tạo giá trị chu kỳ là 200
+    while(1) // Vòng lặp vô hạn
+    {
+        forward(); // Gọi hàm điều khiển động cơ theo chiều thuận
+        for(duty = 0; duty < period; duty++) // Tăng dần duty cycle từ 0 đến period
+        {
+            update_duty(duty); // Cập nhật duty cycle cho PWM
+            __delay_ms(10); // Đợi 10ms
+        }
+        for(duty = period; duty > 0; duty--) // Giảm dần duty cycle từ period về 0
+        {
+            update_duty(duty); // Cập nhật duty cycle cho PWM
+            __delay_ms(10); // Đợi 10ms
+        }
+        stop(); // Gọi hàm dừng động cơ
+        __delay_ms(1000); // Đợi 1s
+        backward(); // Gọi hàm điều khiển động cơ theo chiều nghịch
+        for(duty = 0; duty < period; duty++) // Tăng dần duty cycle từ 0 đến period
+        {
+            update_duty(duty); // Cập nhật duty cycle cho PWM
+            __delay_ms(10); // Đợi 10ms
+        }
+        for(duty = period; duty > 0; duty--) // Giảm dần duty cycle từ period về 0
+        {
+            update_duty(duty); // Cập nhật duty cycle cho PWM
+            __delay_ms(10); // Đợi 10ms
+        }
+        stop(); // Gọi hàm dừng động cơ
+        __delay_ms(1000); // Đợi 1s
+    }
+}
